@@ -35,7 +35,7 @@
         ><span>SolankiGroup<small>By Mohit Solanki · Raipur</small></span></a
       >
       <nav>
-        <a href="#properties">Properties</a><a href="#visit">Book visit</a
+        <a href="#enquiry">AI enquiry</a><a href="#properties">Properties</a><a href="#visit">Book visit</a
         ><a
           class="nav-cta"
           href="https://wa.me/919691062422?text=Namaste%2C%20mujhe%20property%20details%20chahiye."
@@ -55,7 +55,7 @@
             inventory और आसान site visit request.
           </p>
           <div class="actions">
-            <a class="btn primary" href="#visit">Visit request करें</a
+            <a class="btn primary" href="#enquiry">अपनी enquiry शुरू करें</a
             ><a class="btn secondary" href="#properties">Details देखें</a>
           </div>
           <p class="fineprint">
@@ -66,7 +66,42 @@
         <div class="hero-card">
           <div><strong>5 flats</strong><span>Bhatagaon · ready to move</span></div>
           <div><strong>5 plots</strong><span>Amleshwar · registry ready</span></div>
-          <div><strong>24×7</strong><span>WhatsApp property enquiries</span></div>
+          <div><strong>24×7</strong><span>AI website enquiries</span></div>
+        </div>
+      </section>
+      <section class="enquiry-section" id="enquiry">
+        <div class="enquiry-copy">
+          <p class="eyebrow">24×7 GUIDED ENQUIRY</p>
+          <h2>पहले सही जानकारी.<br />फिर सही अगला कदम.</h2>
+          <p>
+            Flats, plots या online architectural services—अपनी enquiry लिखें. Assistant उसी विषय
+            की जानकारी देगा और जरूरत समझने के बाद visit या meeting request तक ले जाएगा.
+          </p>
+          <ul>
+            <li>अनावश्यक call push नहीं</li>
+            <li>Final price या availability का अनुमान नहीं</li>
+            <li>Booking CRM में track होती है</li>
+          </ul>
+        </div>
+        <div class="assistant-card" aria-labelledby="assistant-title">
+          <header>
+            <span class="assistant-avatar">SG</span>
+            <div><strong id="assistant-title">SolankiGroup Assistant</strong><small><i></i> Online · 24×7 enquiry</small></div>
+          </header>
+          <div class="chat-log" id="chat-log" aria-live="polite">
+            <div class="chat-message assistant">Namaste! Mohit Solanki se sampark karne ke liye dhanyavaad. Kripya apni enquiry ka sankshipt vivaran share karein, taaki aapko sahi aur prasangik jaankari di ja sake.</div>
+          </div>
+          <div class="quick-replies" id="quick-replies">
+            <button type="button" data-message="Mujhe Bhatagaon flats ki details chahiye">Bhatagaon flats</button>
+            <button type="button" data-message="Mujhe Amleshwar plots ki details chahiye">Amleshwar plots</button>
+            <button type="button" data-message="Mujhe online architecture service chahiye">Architecture service</button>
+          </div>
+          <form class="chat-form" id="chat-form">
+            <label class="sr-only" for="chat-input">अपनी enquiry लिखें</label>
+            <input id="chat-input" maxlength="1200" autocomplete="off" placeholder="अपनी enquiry लिखें…" required />
+            <button type="submit" aria-label="Message भेजें">भेजें</button>
+          </form>
+          <a class="assistant-schedule" href="#visit">Visit / meeting request करें →</a>
         </div>
       </section>
       <section class="properties" id="properties">
@@ -213,6 +248,11 @@
       const form = document.querySelector("#visit-form"),
         statusBox = document.querySelector("#form-status"),
         dateInput = form.elements.preferredAt;
+      const attributionParams = new URLSearchParams(location.search);
+      const attribution = [...attributionParams.entries()]
+        .filter(([key]) => /^(utm_|fbclid$|ad_id$|adset_id$|campaign_id$)/i.test(key))
+        .map(([key, value]) => `${key}=${value}`)
+        .join("&");
       const now = new Date(Date.now() + 30 * 60 * 1000);
       now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
       dateInput.min = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -247,6 +287,7 @@
         try {
           const payload = Object.fromEntries(new FormData(form));
           payload.preferredAt = new Date(payload.preferredAt).toISOString();
+          payload.attribution = attribution;
           const response = await fetch(
             "https://mohit-property-crm-raipur.mohitsolanki.chatgpt.site/api/public/visit-request",
             {
@@ -272,6 +313,61 @@
           button.disabled = false;
           button.textContent = "Schedule request भेजें";
         }
+      });
+
+      const chatForm = document.querySelector("#chat-form"),
+        chatInput = document.querySelector("#chat-input"),
+        chatLog = document.querySelector("#chat-log"),
+        quickReplies = document.querySelector("#quick-replies");
+      let sessionId = sessionStorage.getItem("solankigroup-enquiry-session");
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem("solankigroup-enquiry-session", sessionId);
+      }
+      function addMessage(text, role) {
+        const bubble = document.createElement("div");
+        bubble.className = `chat-message ${role}`;
+        bubble.textContent = text;
+        chatLog.appendChild(bubble);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        return bubble;
+      }
+      async function sendEnquiry(message) {
+        addMessage(message, "user");
+        chatInput.value = "";
+        chatInput.disabled = true;
+        const pending = addMessage("जवाब तैयार हो रहा है…", "assistant pending");
+        try {
+          const response = await fetch(
+            "https://mohit-property-crm-raipur.mohitsolanki.chatgpt.site/api/ai/chat",
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ message, sessionId, attribution }),
+            },
+          );
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Assistant उपलब्ध नहीं है.");
+          pending.classList.remove("pending");
+          pending.textContent = data.reply;
+          quickReplies.hidden = true;
+        } catch (error) {
+          pending.classList.remove("pending");
+          pending.textContent = "अभी automated जवाब उपलब्ध नहीं है. नीचे अपनी visit, meeting या callback request भेजें—Our Team उसे track करेगी.";
+        } finally {
+          chatInput.disabled = false;
+          chatInput.focus();
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+      }
+      chatForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const message = chatInput.value.trim();
+        if (message) void sendEnquiry(message);
+      });
+      quickReplies.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-message]");
+        if (button) void sendEnquiry(button.dataset.message);
       });
     </script>
   </body>
