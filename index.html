@@ -17,6 +17,7 @@
       <form class="lead-gate" id="lead-gate"><strong>अपनी enquiry शुरू करें</strong><label>आपका नाम<input name="name" autocomplete="name" minlength="2" maxlength="80" placeholder="पूरा नाम" required></label><label>Mobile / WhatsApp number<input name="phone" autocomplete="tel" inputmode="numeric" pattern="[6-9][0-9]{9}" maxlength="10" placeholder="10-digit mobile number" required></label><label class="consent"><input name="consent" type="checkbox" required><span>मैं enquiry के जवाब और requested follow-up के लिए संपर्क की अनुमति देता/देती हूँ.</span></label><button type="submit">Secure chat शुरू करें</button><small>आपकी जानकारी public नहीं होगी.</small></form>
       <p style="font-size:14px;padding:0 12px;color:#52635c">अधूरी enquiry पर अधिकतम 2 reminders इसी web chat में मिल सकते हैं: 24 घंटे बाद और 72 घंटे बाद, working hours में। रोकने के लिए Stop लिखें।</p>
       <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <p id="history-status" role="status" hidden></p><button id="history-retry" type="button" hidden>Chat फिर load करें</button>
       <div class="quick-replies" id="quick-replies" hidden aria-label="Suggested replies"></div>
       <div class="quick-replies" id="topic-suggestions" hidden aria-label="Related questions"></div>
     </section>
@@ -30,12 +31,12 @@ const API="https://mohit-property-crm-raipur.mohitsolanki.chatgpt.site";
 const attributionParams=new URLSearchParams(location.search),attribution=[...attributionParams.entries()].filter(([key])=>/^(utm_|fbclid$|ad_id$|adset_id$|campaign_id$)/i.test(key)).map(([key,value])=>`${key}=${value}`).join("&");
 let sessionId=sessionStorage.getItem("solankigroup-enquiry-session");if(!sessionId){sessionId=crypto.randomUUID();sessionStorage.setItem("solankigroup-enquiry-session",sessionId)}let profile=null;try{profile=JSON.parse(sessionStorage.getItem("solankigroup-lead-profile")||"null")}catch{};let sending=false;
 const wall=document.querySelector("#chat-wall"),log=document.querySelector("#chat-log"),gate=document.querySelector("#lead-gate"),quickReplies=document.querySelector("#quick-replies"),actions=document.querySelector("#chat-actions"),chatForm=document.querySelector("#chat-form"),chatInput=document.querySelector("#chat-input"),sheet=document.querySelector("#schedule-sheet"),visitForm=document.querySelector("#visit-form"),statusBox=document.querySelector("#form-status");
-let guidedState=null,guidedRequestType="site-visit";
+let guidedState=null,guidedRequestType="site-visit",restoring=false,historyReady=!profile;
 function setChoices(choices){quickReplies.replaceChildren();for(const value of (choices||[]).slice(0,6)){const button=document.createElement("button");button.type="button";button.dataset.message=value;button.textContent=value;quickReplies.append(button)}quickReplies.hidden=!quickReplies.children.length}
 function setSuggestions(values){const box=document.querySelector('#topic-suggestions');box.replaceChildren();for(const value of (values||[]).slice(0,3)){const b=document.createElement('button');b.type='button';b.textContent=value;b.addEventListener('click',()=>sendEnquiry(value));box.append(b)}box.hidden=!box.children.length}
 function timeNow(){return new Intl.DateTimeFormat("en-IN",{hour:"2-digit",minute:"2-digit"}).format(new Date())}function addMessage(text,role){const bubble=document.createElement("div");bubble.className=`message ${role}`;const copy=document.createElement("p");copy.textContent=text;const time=document.createElement("time");time.textContent=timeNow();bubble.append(copy,time);log.appendChild(bubble);wall.scrollTop=wall.scrollHeight;return bubble}function unlockChat(){gate.hidden=true;actions.hidden=false;chatInput.disabled=false;chatInput.placeholder="Message लिखें"}if(profile){unlockChat();document.querySelector(".welcome-message").querySelector("p").textContent=`वापस स्वागत है, ${profile.name}. अपनी enquiry लिखें—guided assistant उपलब्ध जानकारी और scheduling में मदद करेगा.`;document.querySelector(".welcome-message").querySelectorAll("p")[1].hidden=true}
 async function sendEnquiry(message,showUser=true){
- if(!profile||sending)return false;sending=true;
+ if(!profile||sending||restoring||!historyReady)return false;sending=true;
  if(showUser)addMessage(message,"user");chatInput.value="";chatInput.disabled=true;quickReplies.querySelectorAll("button").forEach(b=>b.disabled=true);
  const pending=addMessage("जवाब तैयार हो रहा है…","assistant pending");
  try{
@@ -66,6 +67,31 @@ async function checkFollowup(){
  checkingFollowup=true;lastFollowupCheck=Date.now();
  try{const response=await fetch(`${API}/api/ai/followup`,{method:"POST",headers:{"content-type":"application/json"},signal:AbortSignal.timeout(12000),body:JSON.stringify({sessionId,profile})});if(!response.ok)return;const data=await response.json();if(!sending)for(const message of data.messages||[])addMessage(message.text,"assistant");}catch{/* A reminder failure must not interrupt the enquiry. */}finally{checkingFollowup=false}
 }
-setInterval(checkFollowup,60000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")void checkFollowup()});void checkFollowup();
+// The CRM remains the source of truth. Only unsent text and local booking receipts
+// live in this tab's storage; returning from details never starts a new enquiry.
+const draftKey=`solankigroup-chat-ui:${sessionId}`;
+function saveChatUI(){if(restoring||!historyReady)return;try{sessionStorage.setItem(draftKey,JSON.stringify({draft:chatInput.value,receipts:[...log.children].filter(b=>b.querySelector('p')?.textContent.startsWith('✅')).map(b=>({text:b.querySelector('p').textContent,time:b.querySelector('time').textContent}))}))}catch{}}
+chatInput.addEventListener('input',saveChatUI);window.addEventListener('pagehide',saveChatUI);
+async function restoreChat(){
+ if(!profile||restoring||sending)return;
+ restoring=true;chatInput.disabled=true;
+ const status=document.querySelector('#history-status'),retry=document.querySelector('#history-retry');
+ status.hidden=false;status.textContent='आपकी पिछली बातचीत load हो रही है…';retry.hidden=true;
+ try{
+  const response=await fetch(`${API}/api/ai/chat`,{method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(30000),body:JSON.stringify({action:'history',sessionId,profile})});
+  const data=await response.json();if(!response.ok||!Array.isArray(data.messages))throw Error('History unavailable');
+  log.replaceChildren();
+  for(const message of data.messages){const bubble=addMessage(message.content,message.role);const date=new Date(message.created_at);if(!Number.isNaN(date.getTime()))bubble.querySelector('time').textContent=new Intl.DateTimeFormat('en-IN',{hour:'2-digit',minute:'2-digit'}).format(date)}
+  let ui={};try{ui=JSON.parse(sessionStorage.getItem(draftKey)||'{}')||{}}catch{}
+  for(const receipt of (Array.isArray(ui.receipts)?ui.receipts:[])){if(typeof receipt.text==='string'&&receipt.text.startsWith('✅')){const b=addMessage(receipt.text,'assistant');b.querySelector('time').textContent=typeof receipt.time==='string'?receipt.time:''}}
+  chatInput.value=typeof ui.draft==='string'?ui.draft.slice(0,1200):'';
+  setChoices(data.choices);setSuggestions(data.suggestions);guidedState=data.guided||null;guidedRequestType=data.requestType||'site-visit';
+  status.hidden=true;historyReady=true;chatInput.disabled=false;wall.scrollTop=wall.scrollHeight;
+ }catch{status.textContent='पिछली बातचीत अभी load नहीं हुई। आपकी chat delete नहीं हुई है। दोबारा load करें।';retry.hidden=false}
+ finally{restoring=false}
+}
+document.querySelector('#history-retry').addEventListener('click',restoreChat);
+setInterval(()=>{if(!restoring&&historyReady)void checkFollowup()},60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveChatUI();else if(!restoring&&historyReady)void checkFollowup()});
+if(profile)void restoreChat();
 </script>
 </body></html>
