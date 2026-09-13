@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#075e54">
   <meta name="description" content="Mohit Solanki का guided enquiry chat—property जानकारी, visit और online architecture meeting requests.">
-  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Chat with SolankiGroup</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css?v=2.3">
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Chat with SolankiGroup</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css?v=2.4">
 <script defer src="meta-pixel.js?v=1"></script></head>
 <body>
 <div class="page-shell">
@@ -14,8 +14,20 @@
 <div class="privacy-strip"><label for="chat-language">Language / भाषा </label><select id="chat-language"><option value="hi">हिन्दी</option><option value="en">English</option><option value="hinglish">Hinglish</option></select></div>
 <details class="privacy-strip"><summary>भुगतान से पहले ज़रूरी जानकारी</summary>Mohit Solanki की WhatsApp 9691062422 से लिखित स्वीकृति मिले बिना कोई भुगतान न करें।</details>
     <section class="chat-wall" id="chat-wall">
+      <section class="entry-panel" id="entry-panel" aria-label="Property information and contact">
+        <small>SOLANKIGROUP · MOHIT SOLANKI</small>
+        <h1>भाटागांव, रायपुर में फ्लैट देख रहे हैं?</h1>
+        <p>1BHK · 400 sq.ft. · ₹9.9 लाख से</p>
+        <p class="entry-note">कीमत, उपलब्धता और visit का समय टीम से confirm करें।</p>
+        <a class="primary-contact" data-contact-channel="whatsapp" href="https://wa.me/919691062422?text=Namaste%2C%20mujhe%20Bhatagaon%20Raipur%20flats%20ki%20details%20aur%20site%20visit%20ki%20jaankari%20chahiye.">WhatsApp पर बात करें ↗</a>
+        <p class="entry-note">सीधे WhatsApp खुलेगा। यहाँ नाम या number भरना ज़रूरी नहीं।</p>
+        <div class="entry-options"><a data-contact-channel="call" href="tel:+919691062422">कॉल करें</a><a href="details.html">सभी property details</a></div>
+        <details class="property-answer"><summary>फ्लैट का size और location</summary><p>भाटागांव, रायपुर: 1BHK 400 sq.ft., 2BHK 530 sq.ft., 3BHK 665–808 sq.ft. Exact availability और final price टीम से पूछें।</p><a href="https://maps.app.goo.gl/QeDPmbqixXpA8thv7">Map देखें ↗</a></details>
+        <details class="property-answer"><summary>Plot या architecture की जानकारी</summary><p>Amleshwar residential plots और online architecture planning की जानकारी उपलब्ध है।</p><a href="details.html">Details देखें →</a></details>
+        <button type="button" id="web-enquiry-open" aria-expanded="false" aria-controls="lead-gate">इसी वेबसाइट पर enquiry करें</button>
+      </section>
       <div class="date-chip">आज</div>
-      <div class="message assistant welcome-message"><p>नमस्ते! Mohit Solanki से संपर्क करने के लिए धन्यवाद।</p><p>आगे बढ़ने से पहले अपना नाम और mobile number दर्ज करें, ताकि आपकी enquiry सुरक्षित रूप से track हो सके.</p><time>अभी</time></div>
+      <div class="message assistant welcome-message"><p>नमस्ते! Mohit Solanki से संपर्क करने के लिए धन्यवाद।</p><p>Saved web chat और visit request के लिए अपना नाम, mobile number और संपर्क की अनुमति दें।</p><time>अभी</time></div>
       <form class="lead-gate" id="lead-gate"><strong>अपनी enquiry शुरू करें</strong><label>आपका नाम<input name="name" autocomplete="name" minlength="2" maxlength="80" placeholder="पूरा नाम" required></label><label>Mobile / WhatsApp number<input name="phone" autocomplete="tel" inputmode="numeric" pattern="[6-9][0-9]{9}" maxlength="10" placeholder="10-digit mobile number" required></label><label class="consent"><input name="consent" type="checkbox" required><span>मैं enquiry के जवाब और requested follow-up के लिए संपर्क की अनुमति देता/देती हूँ.</span></label><button type="submit">Secure chat शुरू करें</button><small>आपकी जानकारी public नहीं होगी.</small></form>
       <p style="font-size:14px;padding:0 12px;color:#52635c">अधूरी enquiry पर अधिकतम 2 reminders इसी web chat में मिल सकते हैं: 24 घंटे बाद और 72 घंटे बाद, working hours में। रोकने के लिए Stop लिखें।</p>
       <div id="chat-log" class="chat-log" aria-live="polite"></div>
@@ -106,4 +118,5 @@ languageSelect.addEventListener('change',()=>{language=languageSelect.value;chat
 if(profile)void restoreChat();
 </script>
 <script src="client-experience.js?v=2.3"></script>
+<script src="enquiry-entry.js?v=1"></script>
 </body></html>
