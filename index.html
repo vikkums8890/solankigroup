@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#075e54">
   <meta name="description" content="Mohit Solanki का guided enquiry chat—property जानकारी, visit और online architecture meeting requests.">
   <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Chat with SolankiGroup</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css?v=2.3">
-</head>
+<script defer src="meta-pixel.js?v=1"></script></head>
 <body>
 <div class="page-shell">
   <aside class="desktop-note"><span class="desktop-logo">SG</span><p>SolankiGroup</p><h1>सीधी बातचीत.<br>सही जानकारी.<br>Tracked next step.</h1><p class="desktop-copy">Mohit Solanki का guided enquiry assistant. तय जानकारी और आसान विकल्पों के साथ अपनी enquiry आगे बढ़ाएं.</p><div class="trust-row"><span>24×7 guided chat</span><span>Lead tracking</span><span>Team confirmation</span></div></aside>
@@ -61,7 +61,7 @@ gate.addEventListener("submit",async event=>{
  event.preventDefault();if(sending)return;const button=gate.querySelector("button");button.disabled=true;button.textContent="Enquiry save हो रही है…";
  profile=Object.fromEntries(new FormData(gate));profile.followupConsent=profile.consent==="on";delete profile.consent;
  const saved=await sendEnquiry("Namaste, main apni enquiry shuru karna chahta/chahti hoon.",false);
- if(saved){chatStorage.setItem("solankigroup-lead-profile",JSON.stringify(profile));unlockChat()}else{profile=null}
+ if(saved){chatStorage.setItem("solankigroup-lead-profile",JSON.stringify(profile));unlockChat();if(window.trackSolankiLead)window.trackSolankiLead()}else{profile=null}
  button.disabled=false;button.textContent="Secure chat शुरू करें";
 });
 chatForm.addEventListener("submit",event=>{event.preventDefault();const message=chatInput.value.trim();if(message&&!sending)void sendEnquiry(message)});
